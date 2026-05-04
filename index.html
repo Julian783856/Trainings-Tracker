@@ -3,236 +3,160 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Training Tracker</title>
+    <title>Ultimate Training Tracker</title>
     <style>
         :root {
-            --bg: #121212;
-            --card-bg: #1e1e1e;
-            --text: #ffffff;
-            --text-dim: #b0b0b0;
-            --primary: #4ade80; /* Grüner Akzent aus deinem Screenshot */
-            --accent: #3b82f6;
-            --border: #333;
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --primary: #22c55e;
+            --secondary: #3b82f6;
+            --text: #f8fafc;
+            --text-dim: #94a3b8;
+            --border: #334155;
+            --accent: #ef4444;
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-family: -apple-system, system-ui, sans-serif;
             background-color: var(--bg);
             color: var(--text);
-            margin: 0;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            margin: 0; padding: 0;
+            display: flex; justify-content: center;
         }
 
-        /* Layout Container */
-        .app-container {
-            width: 100%;
-            max-width: 500px;
-            min-height: 100vh;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
+        .app { width: 100%; max-width: 500px; min-height: 100vh; padding: 15px; position: relative; }
+        .view { display: none; padding-bottom: 80px; }
+        .view.active { display: block; animation: slideIn 0.2s ease-out; }
+
+        @keyframes slideIn { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: translateX(0); } }
+
+        /* HEADER & NAV */
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .back-btn { background: none; border: none; color: var(--secondary); font-size: 1rem; cursor: pointer; padding: 0; }
+
+        /* KALENDER */
+        .calendar { background: var(--card-bg); border-radius: 16px; padding: 15px; margin-bottom: 25px; border: 1px solid var(--border); }
+        .cal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
+        .cal-day-label { font-size: 0.7rem; color: var(--text-dim); font-weight: bold; }
+        .cal-day { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 0.9rem; cursor: pointer; }
+        .cal-day.today { border: 2px solid var(--primary); }
+        .cal-day.has-workout { background: var(--primary); color: #000; font-weight: bold; }
+
+        /* LISTEN & ITEMS */
+        .list-item { 
+            background: var(--card-bg); border-radius: 12px; padding: 16px; margin-bottom: 10px;
+            display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border);
         }
+        .exercise-item { display: flex; flex-direction: column; gap: 4px; }
+        .btn-delete { color: var(--accent); background: none; border: none; padding: 5px; font-weight: bold; }
 
-        .view { display: none; width: 100%; }
-        .view.active { display: block; animation: fadeIn 0.3s ease; }
+        /* ÜBUNGS DETAIL SEITE */
+        .set-card { background: var(--card-bg); border-radius: 12px; padding: 15px; margin-bottom: 12px; border-left: 4px solid var(--secondary); }
+        .set-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+        .weight-preview { font-size: 0.85rem; color: var(--primary); }
+        .history-expanded { margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border); display: none; }
+        .history-expanded.show { display: block; }
+        .history-list { font-size: 0.8rem; color: var(--text-dim); margin-bottom: 10px; }
 
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        h1, h2, h3 { margin-top: 0; }
-
-        /* Startseite Kalender */
-        .calendar-card {
-            background: var(--card-bg);
-            padding: 15px;
-            border-radius: 15px;
-            margin-bottom: 20px;
+        /* INPUTS */
+        .input-group { display: flex; gap: 10px; margin-top: 10px; }
+        input { 
+            flex: 1; background: #0f172a; border: 1px solid var(--border); color: white; 
+            padding: 12px; border-radius: 8px; text-align: center; font-size: 1rem;
         }
+        input:focus { outline: none; border-color: var(--primary); }
 
-        .calendar-grid {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 8px;
+        /* BUTTONS */
+        .btn { 
+            width: 100%; padding: 16px; border-radius: 12px; border: none; font-weight: bold; font-size: 1rem; cursor: pointer;
+            margin-top: 10px; transition: 0.2s;
         }
-
-        .day {
-            aspect-ratio: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            font-size: 0.9rem;
-            color: var(--text-dim);
-            border: 1px solid var(--border);
-        }
-
-        .day.completed {
-            background-color: var(--primary);
-            color: #000;
-            font-weight: bold;
-            border: none;
-        }
-
-        /* Listen-Elemente (Einheiten & Übungen) */
-        .list-item {
-            background: var(--card-bg);
-            padding: 18px;
-            border-radius: 12px;
-            margin-bottom: 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border: 1px solid var(--border);
-            cursor: pointer;
-            font-size: 1.1rem;
-        }
-
-        .list-item:active { background: #252525; }
-
-        .chevron { color: var(--text-dim); font-weight: bold; }
-
-        /* Übungs-Details (Sätze) */
-        .exercise-block {
-            background: var(--card-bg);
-            border-radius: 15px;
-            padding: 15px;
-            margin-bottom: 15px;
-            border-left: 4px solid var(--primary);
-        }
-
-        .set-row {
-            display: grid;
-            grid-template-columns: 0.8fr 1.2fr 1.2fr;
-            gap: 10px;
-            margin-top: 10px;
-            align-items: center;
-        }
-
-        .history-info {
-            font-size: 0.8rem;
-            color: var(--primary);
-            margin-bottom: 10px;
-        }
-
-        input {
-            background: #2a2a2a;
-            border: 1px solid var(--border);
-            color: white;
-            padding: 10px;
-            border-radius: 8px;
-            width: 100%;
-            font-size: 1rem;
-            text-align: center;
-        }
-
-        input:focus { outline: 1px solid var(--primary); }
-
-        /* Buttons */
-        .btn {
-            width: 100%;
-            padding: 16px;
-            border-radius: 12px;
-            border: none;
-            font-size: 1rem;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 10px;
-            transition: 0.2s;
-        }
-
         .btn-primary { background: var(--primary); color: #000; }
-        .btn-outline { background: transparent; border: 2px dashed var(--border); color: var(--text-dim); }
-        .btn-finish { background: var(--text); color: var(--bg); margin-top: 30px; }
-
-        /* Abschluss-Seite */
-        .summary-box {
-            background: var(--card-bg);
-            padding: 20px;
-            border-radius: 20px;
-            line-height: 1.8;
-        }
-
-        .summary-box span { color: var(--primary); font-weight: bold; }
-
-        textarea {
-            width: 100%;
-            background: #2a2a2a;
-            border: 1px solid var(--border);
-            color: white;
-            padding: 10px;
-            border-radius: 8px;
-            margin-top: 10px;
-            font-family: inherit;
-        }
+        .btn-ghost { background: transparent; border: 2px dashed var(--border); color: var(--text-dim); }
+        .btn-save { background: var(--text); color: var(--bg); position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: calc(100% - 30px); max-width: 470px; }
     </style>
 </head>
 <body>
 
-<div class="app-container">
+<div class="app">
 
+    <!-- VIEW: HOME / KALENDER -->
     <div id="view-home" class="view active">
-        <h1>Startseite</h1>
-        <div class="calendar-card">
-            <div class="calendar-grid" id="calendar-grid">
-                </div>
+        <div class="header">
+            <h2 id="cal-month-title">Monat Jahr</h2>
+            <div>
+                <button class="back-btn" onclick="changeMonth(-1)">◀</button>
+                <button class="back-btn" onclick="changeMonth(1)">▶</button>
+            </div>
         </div>
         
+        <div class="calendar">
+            <div class="cal-grid" id="cal-labels">
+                <div class="cal-day-label">MO</div><div class="cal-day-label">DI</div><div class="cal-day-label">MI</div>
+                <div class="cal-day-label">DO</div><div class="cal-day-label">FR</div><div class="cal-day-label">SA</div><div class="cal-day-label">SO</div>
+            </div>
+            <div class="cal-grid" id="calendar-days"></div>
+        </div>
+
         <h3>Meine Einheiten</h3>
-        <div id="workout-list">
-            </div>
-        <button class="btn btn-outline" onclick="addNewWorkout()">+ Neue Einheit hinzufügen</button>
+        <div id="workout-list"></div>
+        <button class="btn btn-ghost" onclick="createNewWorkout()">+ Neue Trainingseinheit</button>
     </div>
 
+    <!-- VIEW: WORKOUT STRUKTUR (Nur Übungen) -->
     <div id="view-workout" class="view">
-        <h2 id="current-workout-title">Training</h2>
-        <div id="exercise-list">
-            </div>
-        <button class="btn btn-outline" onclick="addNewExercise()">+ Übung hinzufügen</button>
-        <button class="btn btn-finish" onclick="showSummary()">Trainings Abschluss</button>
-        <button class="btn" style="color: grey; background: none;" onclick="navigateTo('home')">Abbrechen</button>
+        <div class="header">
+            <button class="back-btn" onclick="navigateTo('home')">← Zurück</button>
+            <h2 id="workout-title">Einheit</h2>
+        </div>
+        <p style="color: var(--text-dim); font-size: 0.9rem;">Wähle eine Übung zum Starten:</p>
+        <div id="exercise-list"></div>
+        <button class="btn btn-ghost" onclick="addExerciseToPlan()">+ Übung hinzufügen</button>
+        <button class="btn btn-save" onclick="finishFullWorkout()">Training abschließen</button>
     </div>
 
+    <!-- VIEW: ÜBUNGS-DETAIL (Sätze & Historie) -->
+    <div id="view-exercise-detail" class="view">
+        <div class="header">
+            <button class="back-btn" onclick="navigateTo('workout')">← Übungen</button>
+            <h2 id="detail-exercise-name">Übung</h2>
+        </div>
+        
+        <div id="sets-container"></div>
+        
+        <button class="btn btn-ghost" onclick="addNewSet()">+ Weiteren Satz hinzufügen</button>
+        <button class="btn btn-primary" style="margin-top: 30px;" onclick="navigateTo('workout')">Sätze bestätigen</button>
+    </div>
+
+    <!-- VIEW: SUMMARY -->
     <div id="view-summary" class="view">
         <h2>Zusammenfassung</h2>
-        <div class="summary-box">
-            <div id="sum-content">
-                <p>Einheit: <span id="res-name">Legs</span></p>
-                <p>Datum: <span id="res-date">01.01.2024</span></p>
-                <p>Bewegtes Gewicht: <span id="res-weight">0</span> kg</p>
-                <p>Sätze gesamt: <span id="res-sets">0</span></p>
-                <p>Personal Best: <span id="res-pb">Nein</span></p>
-            </div>
-            <p>Kommentar:</p>
-            <textarea id="res-comment" placeholder="Wie lief das Training heute?"></textarea>
-        </div>
-        <button class="btn btn-primary" onclick="saveWorkout()">Training Speichern</button>
+        <div class="calendar" id="summary-data"></div>
+        <button class="btn btn-primary" onclick="saveToHistory()">In Historie speichern</button>
     </div>
 
 </div>
 
 <script>
-    // --- DATEN & SPEICHERUNG ---
-    let data = JSON.parse(localStorage.getItem('tracker_data')) || {
+    // --- DATENSTRUKTUR MIT DUMMY DATEN ---
+    let appData = JSON.parse(localStorage.getItem('gym_pro_data')) || {
         workouts: [
-            { id: 1, name: 'Legs', exercises: ['Kniebeugen', 'Beinpresse'] },
-            { id: 2, name: 'Push', exercises: ['Bankdrücken', 'Schulterdrücken'] },
-            { id: 3, name: 'Pull', exercises: ['Klimmzüge', 'Rudern'] }
+            { id: 101, name: "Legs", exercises: ["Kniebeugen", "Beinbeuger", "Waden"] },
+            { id: 102, name: "Upper Body", exercises: ["Bankdrücken", "Rudern", "Schulterdrücken"] }
         ],
-        history: []
+        history: [
+            // Dummy Daten für Historie der letzten 3 Male (Bankdrücken)
+            { date: "2024-04-20", workoutId: 102, exercises: [{ name: "Bankdrücken", sets: [{ weight: 60, reps: 10 }, { weight: 60, reps: 8 }] }] },
+            { date: "2024-04-27", workoutId: 102, exercises: [{ name: "Bankdrücken", sets: [{ weight: 62.5, reps: 10 }, { weight: 62.5, reps: 9 }] }] },
+            { date: "2024-05-01", workoutId: 102, exercises: [{ name: "Bankdrücken", sets: [{ weight: 65, reps: 8 }, { weight: 65, reps: 7 }] }] }
+        ]
     };
 
-    let currentSession = {
-        name: "",
-        exercises: []
-    };
-
-    function saveToLocal() {
-        localStorage.setItem('tracker_data', JSON.stringify(data));
-    }
+    let currentMonth = new Date();
+    let activeSession = { workoutId: null, exercises: [] };
+    let activeExIdx = null;
 
     // --- NAVIGATION ---
     function navigateTo(viewId) {
@@ -241,155 +165,216 @@
         if(viewId === 'home') renderHome();
     }
 
-    // --- LOGIK STARTSEITE ---
-    function renderHome() {
-        // Kalender (Dummy 14 Tage)
-        const grid = document.getElementById('calendar-grid');
+    // --- KALENDER LOGIK ---
+    function renderCalendar() {
+        const grid = document.getElementById('calendar-days');
+        const title = document.getElementById('cal-month-title');
         grid.innerHTML = '';
-        for(let i=1; i<=14; i++) {
+        
+        const year = currentMonth.getFullYear();
+        const month = currentMonth.getMonth();
+        title.innerText = new Intl.DateTimeFormat('de-DE', { month: 'long', year: 'numeric' }).format(currentMonth);
+
+        const firstDay = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const offset = firstDay === 0 ? 6 : firstDay - 1;
+
+        for(let i=0; i<offset; i++) grid.appendChild(document.createElement('div'));
+
+        for(let d=1; d<=daysInMonth; d++) {
             const dayDiv = document.createElement('div');
-            dayDiv.className = 'day' + (i < 5 ? ' completed' : '');
-            dayDiv.innerText = i;
+            dayDiv.className = 'cal-day';
+            const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+            
+            if(appData.history.some(h => h.date === dateStr)) dayDiv.classList.add('has-workout');
+            if(new Date().toDateString() === new Date(year, month, d).toDateString()) dayDiv.classList.add('today');
+            
+            dayDiv.innerText = d;
             grid.appendChild(dayDiv);
         }
+    }
 
-        // Workout Liste
+    function changeMonth(dir) {
+        currentMonth.setMonth(currentMonth.getMonth() + dir);
+        renderCalendar();
+    }
+
+    // --- WORKOUT & ÜBUNGS LOGIK ---
+    function renderHome() {
+        renderCalendar();
         const list = document.getElementById('workout-list');
         list.innerHTML = '';
-        data.workouts.forEach(w => {
-            const item = document.createElement('div');
-            item.className = 'list-item';
-            item.innerHTML = `<span>${w.name}</span><span class="chevron">></span>`;
-            item.onclick = () => startWorkout(w);
-            list.appendChild(item);
+        appData.workouts.forEach((w, idx) => {
+            const div = document.createElement('div');
+            div.className = 'list-item';
+            div.innerHTML = `<span>${w.name}</span><button class="btn-delete" onclick="deleteWorkout(${idx}, event)">Löschen</button>`;
+            div.onclick = () => startWorkoutSession(w);
+            list.appendChild(div);
         });
     }
 
-    function addNewWorkout() {
-        const name = prompt("Name der neuen Einheit (z.B. Upper):");
-        if(name) {
-            data.workouts.push({ id: Date.now(), name: name, exercises: [] });
-            saveToLocal();
-            renderHome();
+    function deleteWorkout(idx, e) {
+        e.stopPropagation();
+        if(confirm("Einheit löschen?")) {
+            appData.workouts.splice(idx, 1);
+            save(); renderHome();
         }
     }
 
-    // --- LOGIK TRAINING ---
-    function startWorkout(workout) {
-        currentSession.name = workout.name;
-        currentSession.exercises = workout.exercises.map(ex => ({
-            name: ex,
-            sets: [{ weight: getLastWeight(ex), reps: "" }] 
-        }));
-        
-        renderExerciseView();
+    function startWorkoutSession(workout) {
+        document.getElementById('workout-title').innerText = workout.name;
+        // Initialisiere Session-Daten falls leer
+        activeSession.workoutId = workout.id;
+        activeSession.name = workout.name;
+        activeSession.exercises = workout.exercises.map(exName => {
+            return { name: exName, sets: [{ weight: getLastWeight(exName), reps: "" }] };
+        });
+        renderExerciseList();
         navigateTo('workout');
     }
 
-    function getLastWeight(exerciseName) {
-        // Suche in der Historie nach dem letzten Gewicht dieser Übung
-        for (let i = data.history.length - 1; i >= 0; i--) {
-            const session = data.history[i];
-            const found = session.exercises.find(e => e.name === exerciseName);
-            if (found && found.sets.length > 0) return found.sets[0].weight;
+    function renderExerciseList() {
+        const list = document.getElementById('exercise-list');
+        list.innerHTML = '';
+        activeSession.exercises.forEach((ex, idx) => {
+            const div = document.createElement('div');
+            div.className = 'list-item';
+            div.innerHTML = `
+                <div class="exercise-item">
+                    <strong>${ex.name}</strong>
+                    <small style="color:var(--text-dim)">${ex.sets.length} Sätze eingetragen</small>
+                </div>
+                <button class="btn-delete" onclick="removeExFromSession(${idx}, event)">×</button>
+            `;
+            div.onclick = () => openExerciseDetail(idx);
+            list.appendChild(div);
+        });
+    }
+
+    function openExerciseDetail(idx) {
+        activeExIdx = idx;
+        const ex = activeSession.exercises[idx];
+        document.getElementById('detail-exercise-name').innerText = ex.name;
+        renderSets();
+        navigateTo('exercise-detail');
+    }
+
+    function renderSets() {
+        const container = document.getElementById('sets-container');
+        container.innerHTML = '';
+        const ex = activeSession.exercises[activeExIdx];
+
+        ex.sets.forEach((set, sIdx) => {
+            const lastWeight = getLastWeight(ex.name);
+            const historyReps = getLastReps(ex.name, sIdx); // Holt die Reps der letzten 3 Einheiten
+
+            const card = document.createElement('div');
+            card.className = 'set-card';
+            card.innerHTML = `
+                <div class="set-header" onclick="toggleHistory(${sIdx})">
+                    <strong>Satz ${sIdx + 1}</strong>
+                    <span class="weight-preview">Letztes Mal: ${lastWeight || '--'} kg ▼</span>
+                </div>
+                <div id="history-${sIdx}" class="history-expanded">
+                    <div class="history-list">Historie (Reps): ${historyReps.length > 0 ? historyReps.join(' → ') : 'Keine Daten'}</div>
+                    <div class="input-group">
+                        <input type="number" placeholder="kg" value="${set.weight}" oninput="updateSetData(${sIdx}, 'weight', this.value)">
+                        <input type="number" placeholder="Reps" value="${set.reps}" oninput="updateSetData(${sIdx}, 'reps', this.value)">
+                    </div>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    function toggleHistory(sIdx) {
+        const el = document.getElementById(`history-${sIdx}`);
+        el.classList.toggle('show');
+    }
+
+    // --- HELPER FUNKTIONEN FÜR DATEN ---
+    function getLastWeight(exName) {
+        for (let i = appData.history.length - 1; i >= 0; i--) {
+            const ex = appData.history[i].exercises.find(e => e.name === exName);
+            if (ex && ex.sets[0]) return ex.sets[0].weight;
         }
         return "";
     }
 
-    function renderExerciseView() {
-        const container = document.getElementById('exercise-list');
-        document.getElementById('current-workout-title').innerText = currentSession.name;
-        container.innerHTML = '';
-
-        currentSession.exercises.forEach((ex, exIdx) => {
-            const div = document.createElement('div');
-            div.className = 'exercise-block';
-            div.innerHTML = `
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <strong>${ex.name}</strong>
-                    <button class="btn btn-primary" style="width:auto; padding:5px 10px; font-size:0.8rem;" onclick="addSet(${exIdx})">+ Satz</button>
-                </div>
-                <div class="history-info">Letztes Mal: ${getLastWeight(ex.name) || '--'} kg</div>
-                <div id="sets-container-${exIdx}"></div>
-            `;
-            container.appendChild(div);
-            renderSets(exIdx);
-        });
+    function getLastReps(exName, setIdx) {
+        let historyReps = [];
+        let count = 0;
+        for (let i = appData.history.length - 1; i >= 0 && count < 3; i--) {
+            const ex = appData.history[i].exercises.find(e => e.name === exName);
+            if (ex && ex.sets[setIdx]) {
+                historyReps.push(ex.sets[setIdx].reps);
+                count++;
+            }
+        }
+        return historyReps;
     }
 
-    function renderSets(exIdx) {
-        const container = document.getElementById(`sets-container-${exIdx}`);
-        container.innerHTML = '';
-        currentSession.exercises[exIdx].sets.forEach((set, sIdx) => {
-            const row = document.createElement('div');
-            row.className = 'set-row';
-            row.innerHTML = `
-                <span>Set ${sIdx + 1}</span>
-                <input type="number" placeholder="kg" value="${set.weight}" oninput="updateSet(${exIdx}, ${sIdx}, 'weight', this.value)">
-                <input type="number" placeholder="Reps" value="${set.reps}" oninput="updateSet(${exIdx}, ${sIdx}, 'reps', this.value)">
-            `;
-            container.appendChild(row);
-        });
+    function updateSetData(sIdx, field, val) {
+        activeSession.exercises[activeExIdx].sets[sIdx][field] = val;
     }
 
-    function addSet(exIdx) {
-        const lastWeight = currentSession.exercises[exIdx].sets.slice(-1)[0].weight;
-        currentSession.exercises[exIdx].sets.push({ weight: lastWeight, reps: "" });
-        renderSets(exIdx);
+    function addNewSet() {
+        const ex = activeSession.exercises[activeExIdx];
+        const lastW = ex.sets[ex.sets.length-1].weight;
+        ex.sets.push({ weight: lastW, reps: "" });
+        renderSets();
     }
 
-    function updateSet(exIdx, sIdx, field, val) {
-        currentSession.exercises[exIdx].sets[sIdx][field] = val;
-    }
-
-    function addNewExercise() {
+    function addExerciseToPlan() {
         const name = prompt("Name der Übung:");
         if(name) {
-            currentSession.exercises.push({ name: name, sets: [{ weight: "", reps: "" }] });
-            renderExerciseView();
+            activeSession.exercises.push({ name: name, sets: [{ weight: getLastWeight(name), reps: "" }] });
+            renderExerciseList();
         }
     }
 
-    // --- LOGIK ABSCHLUSS ---
-    function showSummary() {
-        let totalWeight = 0;
-        let totalSets = 0;
-
-        currentSession.exercises.forEach(ex => {
-            ex.sets.forEach(s => {
-                if(s.weight && s.reps) {
-                    totalWeight += (parseFloat(s.weight) * parseInt(s.reps));
-                    totalSets++;
-                }
-            });
-        });
-
-        document.getElementById('res-name').innerText = currentSession.name;
-        document.getElementById('res-date').innerText = new Date().toLocaleDateString();
-        document.getElementById('res-weight').innerText = totalWeight;
-        document.getElementById('res-sets').innerText = totalSets;
-        
-        navigateTo('summary');
+    function removeExFromSession(idx, e) {
+        e.stopPropagation();
+        activeSession.exercises.splice(idx, 1);
+        renderExerciseList();
     }
 
-    function saveWorkout() {
-        const fullSession = {
-            ...currentSession,
-            id: Date.now(),
-            date: new Date().toISOString(),
-            comment: document.getElementById('res-comment').value
+    function finishFullWorkout() {
+        navigateTo('summary');
+        const sum = document.getElementById('summary-data');
+        let totalSets = 0;
+        activeSession.exercises.forEach(e => totalSets += e.sets.length);
+        sum.innerHTML = `
+            <p><strong>Einheit:</strong> ${activeSession.name}</p>
+            <p><strong>Übungen:</strong> ${activeSession.exercises.length}</p>
+            <p><strong>Sätze gesamt:</strong> ${totalSets}</p>
+        `;
+    }
+
+    function saveToHistory() {
+        const record = {
+            date: new Date().toISOString().split('T')[0],
+            workoutId: activeSession.workoutId,
+            exercises: JSON.parse(JSON.stringify(activeSession.exercises))
         };
-        
-        data.history.push(fullSession);
-        saveToLocal();
-        alert("Training erfolgreich gespeichert!");
+        appData.history.push(record);
+        save();
+        alert("Gespeichert!");
         navigateTo('home');
     }
 
-    // App initialisieren
+    function save() { localStorage.setItem('gym_pro_data', JSON.stringify(appData)); }
+
+    function createNewWorkout() {
+        const name = prompt("Name der Einheit (z.B. Pull):");
+        if(name) {
+            appData.workouts.push({ id: Date.now(), name: name, exercises: [] });
+            save(); renderHome();
+        }
+    }
+
+    // Start
     renderHome();
-
 </script>
-
 </body>
 </html>
