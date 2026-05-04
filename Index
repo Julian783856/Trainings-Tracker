@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Training Tracker</title>
+    <style>
+        :root {
+            --bg: #121212;
+            --card-bg: #1e1e1e;
+            --text: #ffffff;
+            --text-dim: #b0b0b0;
+            --primary: #4ade80; /* Grüner Akzent aus deinem Screenshot */
+            --accent: #3b82f6;
+            --border: #333;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Layout Container */
+        .app-container {
+            width: 100%;
+            max-width: 500px;
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .view { display: none; width: 100%; }
+        .view.active { display: block; animation: fadeIn 0.3s ease; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        h1, h2, h3 { margin-top: 0; }
+
+        /* Startseite Kalender */
+        .calendar-card {
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+        }
+
+        .day {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-size: 0.9rem;
+            color: var(--text-dim);
+            border: 1px solid var(--border);
+        }
+
+        .day.completed {
+            background-color: var(--primary);
+            color: #000;
+            font-weight: bold;
+            border: none;
+        }
+
+        /* Listen-Elemente (Einheiten & Übungen) */
+        .list-item {
+            background: var(--card-bg);
+            padding: 18px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid var(--border);
+            cursor: pointer;
+            font-size: 1.1rem;
+        }
+
+        .list-item:active { background: #252525; }
+
+        .chevron { color: var(--text-dim); font-weight: bold; }
+
+        /* Übungs-Details (Sätze) */
+        .exercise-block {
+            background: var(--card-bg);
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 4px solid var(--primary);
+        }
+
+        .set-row {
+            display: grid;
+            grid-template-columns: 0.8fr 1.2fr 1.2fr;
+            gap: 10px;
+            margin-top: 10px;
+            align-items: center;
+        }
+
+        .history-info {
+            font-size: 0.8rem;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+
+        input {
+            background: #2a2a2a;
+            border: 1px solid var(--border);
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            width: 100%;
+            font-size: 1rem;
+            text-align: center;
+        }
+
+        input:focus { outline: 1px solid var(--primary); }
+
+        /* Buttons */
+        .btn {
+            width: 100%;
+            padding: 16px;
+            border-radius: 12px;
+            border: none;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: 0.2s;
+        }
+
+        .btn-primary { background: var(--primary); color: #000; }
+        .btn-outline { background: transparent; border: 2px dashed var(--border); color: var(--text-dim); }
+        .btn-finish { background: var(--text); color: var(--bg); margin-top: 30px; }
+
+        /* Abschluss-Seite */
+        .summary-box {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 20px;
+            line-height: 1.8;
+        }
+
+        .summary-box span { color: var(--primary); font-weight: bold; }
+
+        textarea {
+            width: 100%;
+            background: #2a2a2a;
+            border: 1px solid var(--border);
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-family: inherit;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+
+    <div id="view-home" class="view active">
+        <h1>Startseite</h1>
+        <div class="calendar-card">
+            <div class="calendar-grid" id="calendar-grid">
+                </div>
+        </div>
+        
+        <h3>Meine Einheiten</h3>
+        <div id="workout-list">
+            </div>
+        <button class="btn btn-outline" onclick="addNewWorkout()">+ Neue Einheit hinzufügen</button>
+    </div>
+
+    <div id="view-workout" class="view">
+        <h2 id="current-workout-title">Training</h2>
+        <div id="exercise-list">
+            </div>
+        <button class="btn btn-outline" onclick="addNewExercise()">+ Übung hinzufügen</button>
+        <button class="btn btn-finish" onclick="showSummary()">Trainings Abschluss</button>
+        <button class="btn" style="color: grey; background: none;" onclick="navigateTo('home')">Abbrechen</button>
+    </div>
+
+    <div id="view-summary" class="view">
+        <h2>Zusammenfassung</h2>
+        <div class="summary-box">
+            <div id="sum-content">
+                <p>Einheit: <span id="res-name">Legs</span></p>
+                <p>Datum: <span id="res-date">01.01.2024</span></p>
+                <p>Bewegtes Gewicht: <span id="res-weight">0</span> kg</p>
+                <p>Sätze gesamt: <span id="res-sets">0</span></p>
+                <p>Personal Best: <span id="res-pb">Nein</span></p>
+            </div>
+            <p>Kommentar:</p>
+            <textarea id="res-comment" placeholder="Wie lief das Training heute?"></textarea>
+        </div>
+        <button class="btn btn-primary" onclick="saveWorkout()">Training Speichern</button>
+    </div>
+
+</div>
+
+<script>
+    // --- DATEN & SPEICHERUNG ---
+    let data = JSON.parse(localStorage.getItem('tracker_data')) || {
+        workouts: [
+            { id: 1, name: 'Legs', exercises: ['Kniebeugen', 'Beinpresse'] },
+            { id: 2, name: 'Push', exercises: ['Bankdrücken', 'Schulterdrücken'] },
+            { id: 3, name: 'Pull', exercises: ['Klimmzüge', 'Rudern'] }
+        ],
+        history: []
+    };
+
+    let currentSession = {
+        name: "",
+        exercises: []
+    };
+
+    function saveToLocal() {
+        localStorage.setItem('tracker_data', JSON.stringify(data));
+    }
+
+    // --- NAVIGATION ---
+    function navigateTo(viewId) {
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        document.getElementById('view-' + viewId).classList.add('active');
+        if(viewId === 'home') renderHome();
+    }
+
+    // --- LOGIK STARTSEITE ---
+    function renderHome() {
+        // Kalender (Dummy 14 Tage)
+        const grid = document.getElementById('calendar-grid');
+        grid.innerHTML = '';
+        for(let i=1; i<=14; i++) {
+            const dayDiv = document.createElement('div');
+            dayDiv.className = 'day' + (i < 5 ? ' completed' : '');
+            dayDiv.innerText = i;
+            grid.appendChild(dayDiv);
+        }
+
+        // Workout Liste
+        const list = document.getElementById('workout-list');
+        list.innerHTML = '';
+        data.workouts.forEach(w => {
+            const item = document.createElement('div');
+            item.className = 'list-item';
+            item.innerHTML = `<span>${w.name}</span><span class="chevron">></span>`;
+            item.onclick = () => startWorkout(w);
+            list.appendChild(item);
+        });
+    }
+
+    function addNewWorkout() {
+        const name = prompt("Name der neuen Einheit (z.B. Upper):");
+        if(name) {
+            data.workouts.push({ id: Date.now(), name: name, exercises: [] });
+            saveToLocal();
+            renderHome();
+        }
+    }
+
+    // --- LOGIK TRAINING ---
+    function startWorkout(workout) {
+        currentSession.name = workout.name;
+        currentSession.exercises = workout.exercises.map(ex => ({
+            name: ex,
+            sets: [{ weight: getLastWeight(ex), reps: "" }] 
+        }));
+        
+        renderExerciseView();
+        navigateTo('workout');
+    }
+
+    function getLastWeight(exerciseName) {
+        // Suche in der Historie nach dem letzten Gewicht dieser Übung
+        for (let i = data.history.length - 1; i >= 0; i--) {
+            const session = data.history[i];
+            const found = session.exercises.find(e => e.name === exerciseName);
+            if (found && found.sets.length > 0) return found.sets[0].weight;
+        }
+        return "";
+    }
+
+    function renderExerciseView() {
+        const container = document.getElementById('exercise-list');
+        document.getElementById('current-workout-title').innerText = currentSession.name;
+        container.innerHTML = '';
+
+        currentSession.exercises.forEach((ex, exIdx) => {
+            const div = document.createElement('div');
+            div.className = 'exercise-block';
+            div.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <strong>${ex.name}</strong>
+                    <button class="btn btn-primary" style="width:auto; padding:5px 10px; font-size:0.8rem;" onclick="addSet(${exIdx})">+ Satz</button>
+                </div>
+                <div class="history-info">Letztes Mal: ${getLastWeight(ex.name) || '--'} kg</div>
+                <div id="sets-container-${exIdx}"></div>
+            `;
+            container.appendChild(div);
+            renderSets(exIdx);
+        });
+    }
+
+    function renderSets(exIdx) {
+        const container = document.getElementById(`sets-container-${exIdx}`);
+        container.innerHTML = '';
+        currentSession.exercises[exIdx].sets.forEach((set, sIdx) => {
+            const row = document.createElement('div');
+            row.className = 'set-row';
+            row.innerHTML = `
+                <span>Set ${sIdx + 1}</span>
+                <input type="number" placeholder="kg" value="${set.weight}" oninput="updateSet(${exIdx}, ${sIdx}, 'weight', this.value)">
+                <input type="number" placeholder="Reps" value="${set.reps}" oninput="updateSet(${exIdx}, ${sIdx}, 'reps', this.value)">
+            `;
+            container.appendChild(row);
+        });
+    }
+
+    function addSet(exIdx) {
+        const lastWeight = currentSession.exercises[exIdx].sets.slice(-1)[0].weight;
+        currentSession.exercises[exIdx].sets.push({ weight: lastWeight, reps: "" });
+        renderSets(exIdx);
+    }
+
+    function updateSet(exIdx, sIdx, field, val) {
+        currentSession.exercises[exIdx].sets[sIdx][field] = val;
+    }
+
+    function addNewExercise() {
+        const name = prompt("Name der Übung:");
+        if(name) {
+            currentSession.exercises.push({ name: name, sets: [{ weight: "", reps: "" }] });
+            renderExerciseView();
+        }
+    }
+
+    // --- LOGIK ABSCHLUSS ---
+    function showSummary() {
+        let totalWeight = 0;
+        let totalSets = 0;
+
+        currentSession.exercises.forEach(ex => {
+            ex.sets.forEach(s => {
+                if(s.weight && s.reps) {
+                    totalWeight += (parseFloat(s.weight) * parseInt(s.reps));
+                    totalSets++;
+                }
+            });
+        });
+
+        document.getElementById('res-name').innerText = currentSession.name;
+        document.getElementById('res-date').innerText = new Date().toLocaleDateString();
+        document.getElementById('res-weight').innerText = totalWeight;
+        document.getElementById('res-sets').innerText = totalSets;
+        
+        navigateTo('summary');
+    }
+
+    function saveWorkout() {
+        const fullSession = {
+            ...currentSession,
+            id: Date.now(),
+            date: new Date().toISOString(),
+            comment: document.getElementById('res-comment').value
+        };
+        
+        data.history.push(fullSession);
+        saveToLocal();
+        alert("Training erfolgreich gespeichert!");
+        navigateTo('home');
+    }
+
+    // App initialisieren
+    renderHome();
+
+</script>
+
+</body>
+</html>
