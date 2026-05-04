@@ -3,303 +3,391 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Mindful Strength Ultimate</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Mindful Strength Tracker</title>
     <style>
         :root {
-            --bg: #000; --card: #121212; --primary: #22c55e; --secondary: #3b82f6;
-            --text: #fff; --text-dim: #71717a; --border: #27272a; --input-bg: #1c1c1e;
+            --bg: #000000;
+            --card: #121212;
+            --primary: #22c55e;
+            --secondary: #3b82f6;
+            --text: #ffffff;
+            --text-dim: #71717a;
+            --border: #27272a;
+            --accent: #ef4444;
+            --input-bg: #18181b;
         }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: -apple-system, system-ui, sans-serif; }
-        body { background: var(--bg); color: var(--text); margin: 0; display: flex; justify-content: center; }
-        .app { width: 100%; max-width: 500px; min-height: 100vh; padding: 20px; padding-bottom: 100px; }
-        .view { display: none; } .view.active { display: block; }
 
-        /* UI Elements */
-        .card { background: var(--card); border-radius: 18px; border: 1px solid var(--border); padding: 15px; margin-bottom: 15px; }
-        .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; text-align: center; }
-        .cal-day { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 0.9rem; cursor: pointer; transition: 0.2s; }
-        .has-workout { background: rgba(34, 197, 94, 0.25); color: var(--primary); font-weight: bold; border: 1px solid var(--primary); }
-        .today { border: 1px solid var(--secondary); color: var(--secondary); }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0; padding: 0;
+            display: flex; justify-content: center;
+            line-height: 1.5;
+        }
 
-        .list-item { background: var(--card); padding: 18px; border-radius: 16px; border: 1px solid var(--border); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+        .app { width: 100%; max-width: 500px; min-height: 100vh; padding: 20px; }
+        .view { display: none; }
+        .view.active { display: block; animation: slideUp 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
+
+        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* HEADER */
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; padding-top: 10px; }
+        .back-btn { background: none; border: none; color: var(--secondary); font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; gap: 5px; }
+
+        /* CALENDAR */
+        .calendar-card { background: var(--card); border-radius: 24px; padding: 20px; border: 1px solid var(--border); margin-bottom: 30px; }
+        .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; text-align: center; }
+        .cal-day { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 12px; font-size: 0.85rem; color: var(--text-dim); }
+        .cal-day.has-workout { background: rgba(34, 197, 94, 0.2); color: var(--primary); font-weight: bold; border: 1px solid var(--primary); }
+        .cal-day.today { border: 1px solid var(--secondary); color: var(--secondary); }
+
+        /* LISTS & CARDS */
+        .list-item { 
+            background: var(--card); border-radius: 20px; padding: 20px; margin-bottom: 12px;
+            display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border);
+            cursor: pointer; transition: background 0.2s;
+        }
+        .list-item:active { background: #1a1a1a; }
+
+        /* MINDFUL SET COMPONENT */
+        .set-card { background: var(--card); border-radius: 20px; margin-bottom: 15px; border: 1px solid var(--border); transition: all 0.3s ease; }
+        .set-card.expanded { border-color: var(--secondary); box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
         
-        /* Interactive Workout Area */
-        .set-card { background: var(--card); border-radius: 14px; border: 1px solid var(--border); margin-bottom: 8px; overflow: hidden; }
-        .set-header { padding: 14px; display: flex; justify-content: space-between; background: #18181b; }
-        .set-body { display: none; padding: 15px; background: #0a0a0a; border-top: 1px solid var(--border); }
-        .set-card.expanded .set-body { display: block; }
-        
-        .history-pills { display: flex; gap: 6px; margin-bottom: 12px; }
-        .pill { background: #27272a; padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; color: #a1a1aa; border: 1px solid #3f3f46; }
+        .set-header-trigger {
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+        .last-weight-pill { background: var(--input-bg); padding: 6px 14px; border-radius: 12px; font-weight: 600; color: var(--primary); }
 
-        .input-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        input { background: var(--input-bg); border: 1px solid var(--border); color: #fff; padding: 12px; border-radius: 10px; text-align: center; font-size: 1rem; width: 100%; }
-        input:focus { border-color: var(--secondary); outline: none; }
+        .set-body {
+            max-height: 0; overflow: hidden; padding: 0 20px;
+            transition: max-height 0.3s ease, padding 0.3s ease;
+        }
+        .set-card.expanded .set-body { max-height: 300px; padding-bottom: 20px; }
 
-        /* Buttons */
-        .btn { padding: 16px; border-radius: 14px; border: none; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 1rem; }
-        .btn:active { transform: scale(0.98); opacity: 0.9; }
-        .btn-primary { background: var(--primary); color: #000; width: 100%; }
-        .btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--text-dim); width: 100%; margin-top: 10px; }
-        .btn-fixed { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: calc(100% - 40px); max-width: 460px; z-index: 100; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        
-        #timer { position: fixed; top: 15px; left: 50%; transform: translateX(-50%); background: var(--secondary); color: white; padding: 6px 20px; border-radius: 30px; font-weight: bold; z-index: 1000; display: none; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4); }
-        .chart-container { height: 250px; margin-top: 15px; }
+        /* HISTORY PILLS */
+        .history-label { font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; display: block; }
+        .history-row { display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap; }
+        .pill { background: var(--input-bg); padding: 5px 12px; border-radius: 8px; font-size: 0.8rem; border: 1px solid var(--border); }
+
+        /* INPUTS */
+        .input-group { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+        .field { display: flex; flex-direction: column; gap: 6px; }
+        .field label { font-size: 0.7rem; color: var(--text-dim); text-align: center; font-weight: bold; }
+        input { 
+            background: var(--input-bg); border: 1px solid var(--border); color: white; 
+            padding: 14px 10px; border-radius: 12px; text-align: center; font-size: 1.1rem; width: 100%;
+            -moz-appearance: textfield;
+        }
+        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        input:focus { border-color: var(--secondary); outline: none; background: #202023; }
+
+        /* BUTTONS */
+        .btn { width: 100%; padding: 18px; border-radius: 18px; border: none; font-weight: bold; font-size: 1rem; cursor: pointer; transition: transform 0.1s; }
+        .btn:active { transform: scale(0.98); }
+        .btn-primary { background: var(--primary); color: #000; }
+        .btn-ghost { background: transparent; border: 2px dashed var(--border); color: var(--text-dim); margin-bottom: 20px; }
+        .btn-save-fixed { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); width: calc(100% - 40px); max-width: 460px; z-index: 100; }
+
+        /* TIMER OVERLAY */
+        #timer-overlay {
+            position: fixed; top: env(safe-area-inset-top, 20px); left: 50%; transform: translateX(-50%);
+            background: var(--secondary); color: white; padding: 10px 24px; border-radius: 50px;
+            font-weight: 800; display: none; z-index: 2000; box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            font-variant-numeric: tabular-nums;
+        }
     </style>
 </head>
 <body>
 
-<div id="timer">PAUSE: <span id="t-val">60</span>s</div>
+    <div id="timer-overlay">PAUSE: <span id="timer-count">60</span>s</div>
 
-<div class="app">
-    <!-- STARTSEITE -->
-    <div id="view-home" class="view active">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-            <h2 id="month-name" style="margin:0">Mai 2024</h2>
-            <div style="display:flex; gap:5px;">
-                <button class="btn" onclick="changeMonth(-1)" style="background:none; color:white; padding:10px;">◀</button>
-                <button class="btn" onclick="changeMonth(1)" style="background:none; color:white; padding:10px;">▶</button>
+    <div class="app">
+
+        <!-- VIEW: HOME -->
+        <div id="view-home" class="view active">
+            <div class="header">
+                <div>
+                    <h3 id="month-label" style="margin:0; color:var(--text-dim);">Monat</h3>
+                    <h2 style="margin:0;">Dashboard</h2>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button class="back-btn" onclick="navMonth(-1)">◀</button>
+                    <button class="back-btn" onclick="navMonth(1)">▶</button>
+                </div>
+            </div>
+
+            <div class="calendar-card" id="calendar-body"></div>
+
+            <h3 style="margin-bottom: 15px;">Trainingspläne</h3>
+            <div id="plan-list"></div>
+            <button class="btn btn-ghost" onclick="editPlan(-1)">+ Neuen Plan erstellen</button>
+            
+            <div style="margin-top: 40px; display: flex; gap: 10px;">
+                <button class="btn" style="background: var(--card); color: var(--text-dim); font-size: 0.8rem; padding: 10px;" onclick="exportData()">💾 Backup Export</button>
             </div>
         </div>
-        
-        <div class="card" id="cal-container"></div>
 
-        <h3>Deine Trainingspläne</h3>
-        <div id="plan-list"></div>
-        <button class="btn btn-ghost" onclick="openEditor(-1)">+ Plan erstellen</button>
-    </div>
-
-    <!-- WORKOUT TRACKER -->
-    <div id="view-workout" class="view">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-            <h2 id="wo-name">Training</h2>
-            <button onclick="if(confirm('Abbrechen?')) navigate('home')" style="background:none; border:none; color:var(--text-dim)">Beenden</button>
-        </div>
-        <div id="exercise-list"></div>
-        <button class="btn btn-primary btn-fixed" onclick="finishWorkout()">Training Speichern</button>
-    </div>
-
-    <!-- ÜBUNGSDETAILS & GRAPH -->
-    <div id="view-detail" class="view">
-        <button onclick="navigate('workout')" style="background:none; border:none; color:var(--secondary); font-size:1rem; padding:10px 0;">← Zurück</button>
-        <h2 id="det-ex-name" style="margin-top:0">Übung</h2>
-        
-        <div id="det-sets-container"></div>
-
-        <div class="card" style="margin-top:20px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                <span style="font-weight:bold;">Analyse</span>
-                <select id="chart-type" onchange="updateChart()" style="background:#27272a; color:white; border:none; padding:5px; border-radius:5px;">
-                    <option value="weight">Gewicht (Max)</option>
-                    <option value="reps">Wiederholungen</option>
-                </select>
+        <!-- VIEW: CONFIG -->
+        <div id="view-config" class="view">
+            <div class="header">
+                <button class="back-btn" onclick="navigateTo('home')">← Zurück</button>
+                <h2>Plan Editor</h2>
             </div>
-            <div class="chart-container"><canvas id="progressChart"></canvas></div>
+            <input type="text" id="config-plan-name" placeholder="Name des Plans (z.B. Oberkörper)" style="margin-bottom: 25px; text-align: left; font-size: 1.4rem; padding: 0; background: none; border: none; border-bottom: 1px solid var(--border); border-radius: 0;">
+            
+            <div id="config-exercise-list"></div>
+            
+            <button class="btn btn-ghost" onclick="addExerciseToConfig()" style="margin-top: 10px;">+ Übung hinzufügen</button>
+            <div style="height: 100px;"></div>
+            <button class="btn btn-primary btn-save-fixed" onclick="savePlanConfig()">Plan Speichern</button>
         </div>
-    </div>
 
-    <!-- PLAN EDITOR -->
-    <div id="view-editor" class="view">
-        <h2>Plan bearbeiten</h2>
-        <input type="text" id="edit-plan-name" placeholder="Name des Plans (z.B. Push)" style="margin-bottom:20px; text-align:left;">
-        <div id="edit-ex-list"></div>
-        <button class="btn btn-ghost" onclick="addExToPlan()">+ Übung hinzufügen</button>
-        <button class="btn btn-primary btn-fixed" onclick="savePlan()">Plan speichern</button>
+        <!-- VIEW: WORKOUT -->
+        <div id="view-workout" class="view">
+            <div class="header">
+                <button class="back-btn" onclick="navigateTo('home')">✕ Abbruch</button>
+                <h2 id="workout-title">Training</h2>
+            </div>
+            <div id="workout-exercise-list"></div>
+            <div style="height: 100px;"></div>
+            <button class="btn btn-primary btn-save-fixed" onclick="finishWorkout()">Training Beenden</button>
+        </div>
+
+        <!-- VIEW: EXERCISE LOG -->
+        <div id="view-exercise-detail" class="view">
+            <div class="header">
+                <button class="back-btn" onclick="navigateTo('workout')">← Alle Übungen</button>
+            </div>
+            <h2 id="detail-ex-name" style="margin-top: 0; margin-bottom: 25px; font-size: 1.8rem;">Übung</h2>
+            
+            <div id="sets-container"></div>
+            
+            <button class="btn btn-primary" style="margin-top: 20px; background: var(--card); border: 1px solid var(--border); color: var(--text-dim);" onclick="navigateTo('workout')">Fertig</button>
+        </div>
+
     </div>
-</div>
 
 <script>
-    let db = JSON.parse(localStorage.getItem('mindful_v5')) || {
-        plans: [{ name: "Ganzkörper", exercises: [{ name: "Kniebeugen", sets: 3, rest: 90 }] }],
+    // --- STORAGE & INIT ---
+    let appData = JSON.parse(localStorage.getItem('mindful_v2')) || {
+        plans: [{ id: 1, name: "Ganzkörper", exercises: [{ name: "Kniebeugen", sets: 3, rest: 90 }] }],
         history: []
     };
+
+    let currentMonth = new Date();
     let session = null;
     let activeExIdx = null;
-    let chartObj = null;
-    let currentMonth = new Date();
+    let timerInterval = null;
 
-    function save() { localStorage.setItem('mindful_v5', JSON.stringify(db)); }
-    function navigate(id) {
+    function save() { localStorage.setItem('mindful_v2', JSON.stringify(appData)); }
+
+    // --- NAVIGATION ---
+    function navigateTo(viewId) {
         document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-        document.getElementById('view-' + id).classList.add('active');
-        if(id === 'home') renderHome();
+        document.getElementById('view-' + viewId).classList.add('active');
+        if(viewId === 'home') renderHome();
+        window.scrollTo(0,0);
     }
 
-    // --- HOME & KALENDER ---
+    // --- CALENDAR ---
     function renderHome() {
-        const container = document.getElementById('cal-container');
-        container.innerHTML = '<div class="cal-grid" style="color:var(--text-dim); font-size:0.7rem; margin-bottom:10px;">' + ['MO','DI','MI','DO','FR','SA','SO'].map(d => `<div>${d}</div>`).join('') + '</div>';
-        
+        const body = document.getElementById('calendar-body');
+        body.innerHTML = '<div class="cal-grid" style="margin-bottom:12px;">' + ['M','D','M','D','F','S','S'].map(d => `<div style="font-size:0.7rem; font-weight:bold; color:var(--text-dim)">${d}</div>`).join('') + '</div>';
         const grid = document.createElement('div'); grid.className = 'cal-grid';
-        const y = currentMonth.getFullYear(), m = currentMonth.getMonth();
-        document.getElementById('month-name').innerText = new Intl.DateTimeFormat('de-DE', {month:'long', year:'numeric'}).format(currentMonth);
         
-        const firstDay = (new Date(y, m, 1).getDay() + 6) % 7;
-        const daysInMonth = new Date(y, m + 1, 0).getDate();
+        const y = currentMonth.getFullYear(), m = currentMonth.getMonth();
+        document.getElementById('month-label').innerText = new Intl.DateTimeFormat('de-DE', {month:'long', year:'numeric'}).format(currentMonth);
 
-        for(let i=0; i<firstDay; i++) grid.appendChild(document.createElement('div'));
-        for(let d=1; d<=daysInMonth; d++) {
-            const dateStr = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        const first = (new Date(y, m, 1).getDay() + 6) % 7;
+        const days = new Date(y, m + 1, 0).getDate();
+
+        for(let i=0; i<first; i++) grid.appendChild(document.createElement('div'));
+        for(let d=1; d<=days; d++) {
+            const dStr = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
             const dayEl = document.createElement('div');
-            dayEl.className = 'cal-day';
-            if(db.history.some(h => h.date === dateStr)) dayEl.classList.add('has-workout');
-            if(new Date().toISOString().split('T')[0] === dateStr) dayEl.classList.add('today');
+            dayEl.className = 'cal-day' + (appData.history.some(h => h.date === dStr) ? ' has-workout' : '');
+            if(new Date().toISOString().split('T')[0] === dStr) dayEl.classList.add('today');
             dayEl.innerText = d;
-            dayEl.onclick = () => deleteWorkout(dateStr);
             grid.appendChild(dayEl);
         }
-        container.appendChild(grid);
+        body.appendChild(grid);
 
-        const pList = document.getElementById('plan-list'); pList.innerHTML = '';
-        db.plans.forEach((p, i) => {
-            const div = document.createElement('div'); div.className = 'list-item';
-            div.innerHTML = `<div><strong>${p.name}</strong></div><button onclick="event.stopPropagation(); openEditor(${i})" style="background:none; border:none; font-size:1.2rem;">⚙️</button>`;
-            div.onclick = () => startWorkout(i);
-            pList.appendChild(div);
+        const pList = document.getElementById('plan-list');
+        pList.innerHTML = '';
+        appData.plans.forEach((p, i) => {
+            const item = document.createElement('div');
+            item.className = 'list-item';
+            item.innerHTML = `<div><strong style="font-size:1.1rem;">${p.name}</strong><br><small style="color:var(--text-dim)">${p.exercises.length} Übungen</small></div><span onclick="event.stopPropagation(); editPlan(${i})" style="padding:10px;">⚙️</span>`;
+            item.onclick = () => startWorkout(i);
+            pList.appendChild(item);
         });
     }
+    function navMonth(d) { currentMonth.setMonth(currentMonth.getMonth() + d); renderHome(); }
 
-    function deleteWorkout(date) {
-        if(confirm('Training am ' + date + ' löschen?')) {
-            db.history = db.history.filter(h => h.date !== date);
-            save(); renderHome();
-        }
+    // --- PLAN CONFIG ---
+    let editingIdx = -1;
+    function editPlan(idx) {
+        editingIdx = idx;
+        const p = idx === -1 ? { name: "", exercises: [] } : appData.plans[idx];
+        document.getElementById('config-plan-name').value = p.name;
+        renderConfigEx(p.exercises);
+        navigateTo('config');
     }
+    function renderConfigEx(exs) {
+        const list = document.getElementById('config-exercise-list');
+        list.innerHTML = '';
+        exs.forEach((ex, i) => {
+            const div = document.createElement('div');
+            div.className = 'list-item';
+            div.style.flexDirection = 'column';
+            div.style.alignItems = 'stretch';
+            div.innerHTML = `
+                <input type="text" value="${ex.name}" oninput="updateExMeta(${i}, 'name', this.value)" style="text-align:left; font-weight:bold; margin-bottom:10px;">
+                <div class="input-group">
+                    <div class="field"><label>Sätze</label><input type="number" value="${ex.sets}" oninput="updateExMeta(${i}, 'sets', this.value)"></div>
+                    <div class="field"><label>Pause</label><input type="number" value="${ex.rest}" oninput="updateExMeta(${i}, 'rest', this.value)"></div>
+                    <button onclick="removeEx(${i})" style="background:none; border:none; color:var(--accent); font-size:0.8rem;">Löschen</button>
+                </div>`;
+            list.appendChild(div);
+        });
+    }
+    function updateExMeta(i, k, v) { 
+        if(k === 'name') appData.plans[editingIdx].exercises[i].name = v;
+        else appData.plans[editingIdx].exercises[i][k] = parseInt(v);
+    }
+    function addExerciseToConfig() {
+        if(editingIdx === -1) { 
+            appData.plans.push({id: Date.now(), name: "Neuer Plan", exercises: []});
+            editingIdx = appData.plans.length - 1;
+        }
+        appData.plans[editingIdx].exercises.push({name: "Neue Übung", sets: 3, rest: 60});
+        renderConfigEx(appData.plans[editingIdx].exercises);
+    }
+    function removeEx(i) { appData.plans[editingIdx].exercises.splice(i, 1); renderConfigEx(appData.plans[editingIdx].exercises); }
+    function savePlanConfig() { save(); navigateTo('home'); }
 
-    function changeMonth(v) { currentMonth.setMonth(currentMonth.getMonth() + v); renderHome(); }
-
-    // --- WORKOUT ---
-    function startWorkout(planIdx) {
-        const p = db.plans[planIdx];
+    // --- WORKOUT LOGIC ---
+    function startWorkout(idx) {
+        const p = appData.plans[idx];
         session = {
-            name: p.name,
             date: new Date().toISOString().split('T')[0],
+            name: p.name,
             exercises: p.exercises.map(ex => ({
-                name: ex.name, rest: ex.rest,
-                sets: Array.from({length: ex.sets}, () => ({ weight: getPrevValue(ex.name, 'weight'), reps: "" }))
+                name: ex.name,
+                rest: ex.rest,
+                sets: Array.from({length: ex.sets}, () => ({ weight: getLastWeight(ex.name), reps: "", rpe: "" }))
             }))
         };
-        renderWorkout(); navigate('workout');
+        renderWorkoutExList();
+        navigateTo('workout');
     }
 
-    function renderWorkout() {
-        const list = document.getElementById('exercise-list'); list.innerHTML = '';
+    function renderWorkoutExList() {
+        const list = document.getElementById('workout-exercise-list');
+        list.innerHTML = '';
+        document.getElementById('workout-title').innerText = session.name;
         session.exercises.forEach((ex, i) => {
-            const div = document.createElement('div'); div.className = 'list-item';
-            const count = ex.sets.filter(s => s.reps !== "").length;
-            div.innerHTML = `<div><strong>${ex.name}</strong><br><small>${count} / ${ex.sets.length} Sätze fertig</small></div><span>➔</span>`;
-            div.onclick = () => openDetails(i);
+            const div = document.createElement('div');
+            div.className = 'list-item';
+            const done = ex.sets.filter(s => s.reps !== "").length;
+            div.innerHTML = `<div><strong>${ex.name}</strong><br><small style="color:${done === ex.sets.length ? 'var(--primary)' : 'var(--text-dim)'}">${done}/${ex.sets.length} Sätze fertig</small></div><span>${done === ex.sets.length ? '✅' : '▶'}</span>`;
+            div.onclick = () => openExDetail(i);
             list.appendChild(div);
         });
     }
 
-    function openDetails(idx) {
+    function openExDetail(idx) {
         activeExIdx = idx;
         const ex = session.exercises[idx];
-        document.getElementById('det-ex-name').innerText = ex.name;
-        const container = document.getElementById('det-sets-container'); container.innerHTML = '';
+        document.getElementById('detail-ex-name').innerText = ex.name;
+        const container = document.getElementById('sets-container');
+        container.innerHTML = '';
 
         ex.sets.forEach((s, si) => {
-            const history = getSetHistory(ex.name, si);
-            const card = document.createElement('div'); card.className = 'set-card';
+            const history = getHistoryReps(ex.name, si);
+            const card = document.createElement('div');
+            card.className = 'set-card';
+            card.id = `card-${si}`;
             card.innerHTML = `
-                <div class="set-header" onclick="this.parentElement.classList.toggle('expanded')">
-                    <span>SATZ ${si+1}</span>
-                    <span style="color:var(--primary)">${s.weight || '--'} kg</span>
+                <div class="set-header-trigger" onclick="document.getElementById('card-${si}').classList.toggle('expanded')">
+                    <span style="font-weight:bold; color:var(--text-dim)">SATZ ${si+1}</span>
+                    <span class="last-weight-pill">${s.weight || '--'} kg</span>
                 </div>
                 <div class="set-body">
-                    <div class="history-pills">${history.map(h => `<div class="pill">${h} kg</div>`).join('')}</div>
-                    <div class="input-group">
-                        <input type="number" step="0.5" placeholder="kg" value="${s.weight}" oninput="session.exercises[${idx}].sets[${si}].weight=this.value">
-                        <input type="number" placeholder="Reps" value="${s.reps}" oninput="session.exercises[${idx}].sets[${si}].reps=this.value" onfocus="startTimer(${ex.rest})">
+                    <span class="history-label">Letzte Ergebnisse</span>
+                    <div class="history-row">
+                        ${history.map(h => `<div class="pill">${h} Reps</div>`).join('') || '<div class="pill">Keine Historie</div>'}
                     </div>
-                </div>`;
+                    <div class="input-group">
+                        <div class="field"><label>KG</label><input type="number" step="0.5" value="${s.weight}" oninput="updateSetData(${si}, 'weight', this.value)"></div>
+                        <div class="field"><label>REPS</label><input type="number" value="${s.reps}" oninput="updateSetData(${si}, 'reps', this.value)" onfocus="startRestTimer()"></div>
+                        <div class="field"><label>RPE</label><input type="number" value="${s.rpe}" placeholder="1-10" oninput="updateSetData(${si}, 'rpe', this.value)"></div>
+                    </div>
+                </div>
+            `;
             container.appendChild(card);
         });
-        updateChart(); navigate('detail');
+        navigateTo('exercise-detail');
     }
 
-    function updateChart() {
-        const type = document.getElementById('chart-type').value;
-        const exName = session.exercises[activeExIdx].name;
-        const history = db.history.filter(h => h.exercises.some(e => e.name === exName));
-        
-        const labels = history.map(h => h.date);
-        const dataPoints = history.map(h => {
-            const ex = h.exercises.find(e => e.name === exName);
-            return type === 'weight' ? Math.max(...ex.sets.map(s => s.weight || 0)) : ex.sets.reduce((sum, s) => sum + (parseInt(s.reps) || 0), 0);
-        });
+    function updateSetData(si, k, v) { session.exercises[activeExIdx].sets[si][k] = v; }
 
-        if(chartObj) chartObj.destroy();
-        chartObj = new Chart(document.getElementById('progressChart'), {
-            type: 'line',
-            data: { labels, datasets: [{ label: exName, data: dataPoints, borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.1)', fill: true, tension: 0.3 }] },
-            options: { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { grid: { color: '#27272a' } } } }
-        });
-    }
-
-    // --- HELPER ---
-    function startTimer(sec) {
-        clearInterval(window.timerInt);
-        document.getElementById('timer').style.display = 'block';
-        window.timerInt = setInterval(() => {
-            sec--; document.getElementById('t-val').innerText = sec;
-            if(sec <= 0) { clearInterval(window.timerInt); document.getElementById('timer').style.display = 'none'; }
+    function startRestTimer() {
+        clearInterval(timerInterval);
+        const overlay = document.getElementById('timer-overlay');
+        const countEl = document.getElementById('timer-count');
+        let timeLeft = session.exercises[activeExIdx].rest || 60;
+        overlay.style.display = 'block';
+        countEl.innerText = timeLeft;
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            countEl.innerText = timeLeft;
+            if(timeLeft <= 0) {
+                clearInterval(timerInterval);
+                overlay.style.display = 'none';
+                if(navigator.vibrate) navigator.vibrate([300, 100, 300]);
+            }
         }, 1000);
     }
 
-    function getPrevValue(name, key) {
-        const last = db.history.slice().reverse().find(h => h.exercises.some(e => e.name === name));
-        if(!last) return "";
-        return last.exercises.find(e => e.name === name).sets[0][key];
+    function getLastWeight(name) {
+        for(let i=appData.history.length-1; i>=0; i--) {
+            const ex = appData.history[i].exercises.find(e => e.name === name);
+            if(ex && ex.sets[0]) return ex.sets[0].weight;
+        }
+        return "";
     }
 
-    function getSetHistory(name, setIdx) {
-        return db.history.slice(-3).reverse().map(h => {
-            const ex = h.exercises.find(e => e.name === name);
-            return ex && ex.sets[setIdx] ? ex.sets[setIdx].weight : null;
-        }).filter(v => v);
+    function getHistoryReps(name, si) {
+        let res = [];
+        for(let i=appData.history.length-1; i>=0 && res.length < 3; i--) {
+            const ex = appData.history[i].exercises.find(e => e.name === name);
+            if(ex && ex.sets[si] && ex.sets[si].reps) res.push(ex.sets[si].reps);
+        }
+        return res;
     }
 
     function finishWorkout() {
-        db.history.push(session); save(); navigate('home');
+        appData.history.push(JSON.parse(JSON.stringify(session)));
+        save();
+        navigateTo('home');
     }
 
-    // --- EDITOR ---
-    let editingPlanIdx = -1;
-    function openEditor(idx) {
-        editingPlanIdx = idx;
-        const p = idx === -1 ? { name: "", exercises: [] } : db.plans[idx];
-        document.getElementById('edit-plan-name').value = p.name;
-        renderEditorList(p.exercises);
-        navigate('editor');
-    }
-    function renderEditorList(exs) {
-        const list = document.getElementById('edit-ex-list'); list.innerHTML = '';
-        exs.forEach((ex, i) => {
-            const d = document.createElement('div'); d.className = 'card';
-            d.innerHTML = `<input type="text" value="${ex.name}" oninput="updateEx(${i}, 'name', this.value)" style="margin-bottom:10px; text-align:left;">
-            <div class="input-group">
-                <input type="number" value="${ex.sets}" oninput="updateEx(${i}, 'sets', this.value)">
-                <input type="number" value="${ex.rest}" oninput="updateEx(${i}, 'rest', this.value)">
-            </div>
-            <button onclick="removeEx(${i})" style="color:red; background:none; border:none; margin-top:10px; width:100%;">Löschen</button>`;
-            list.appendChild(d);
-        });
-    }
-    function updateEx(i, k, v) { 
-        if(editingPlanIdx === -1) return;
-        db.plans[editingPlanIdx].exercises[i][k] = (k === 'name' ? v : parseInt(v)); 
-    }
-    function addExToPlan() {
-        if(editingPlanIdx === -1) { db.plans.push({name: "Neuer Plan", exercises: []}); editingPlanIdx = db.plans.length-1; }
-        db.plans[editingPlanIdx].exercises.push({name: "Übung", sets: 3, rest: 60});
-        renderEditorList(db.plans[editingPlanIdx].exercises);
-    }
-    function savePlan() { 
-        db.plans[editingPlanIdx].name = document.getElementById('edit-plan-name').value;
-        save(); navigate('home'); 
+    function exportData() {
+        const blob = new Blob([JSON.stringify(appData)], {type:'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = `mindful_backup_${new Date().toISOString().split('T')[0]}.json`;
+        a.click();
     }
 
     renderHome();
