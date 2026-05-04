@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ultimate Training Tracker</title>
+    <title>Pro Training Tracker</title>
     <style>
         :root {
             --bg: #0f172a;
-            --card-bg: #1e293b;
+            --card: #1e293b;
             --primary: #22c55e;
             --secondary: #3b82f6;
             --text: #f8fafc;
@@ -29,134 +29,114 @@
         .view { display: none; padding-bottom: 80px; }
         .view.active { display: block; animation: slideIn 0.2s ease-out; }
 
-        @keyframes slideIn { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* HEADER & NAV */
+        /* HEADER */
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .back-btn { background: none; border: none; color: var(--secondary); font-size: 1rem; cursor: pointer; padding: 0; }
 
         /* KALENDER */
-        .calendar { background: var(--card-bg); border-radius: 16px; padding: 15px; margin-bottom: 25px; border: 1px solid var(--border); }
+        .calendar { background: var(--card); border-radius: 16px; padding: 15px; margin-bottom: 20px; border: 1px solid var(--border); }
         .cal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
-        .cal-day-label { font-size: 0.7rem; color: var(--text-dim); font-weight: bold; }
-        .cal-day { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 0.9rem; cursor: pointer; }
-        .cal-day.today { border: 2px solid var(--primary); }
+        .cal-day { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 0.85rem; }
         .cal-day.has-workout { background: var(--primary); color: #000; font-weight: bold; }
+        .cal-day.today { border: 2px solid var(--secondary); }
 
-        /* LISTEN & ITEMS */
+        /* LISTEN */
         .list-item { 
-            background: var(--card-bg); border-radius: 12px; padding: 16px; margin-bottom: 10px;
+            background: var(--card); border-radius: 12px; padding: 16px; margin-bottom: 10px;
             display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border);
         }
-        .exercise-item { display: flex; flex-direction: column; gap: 4px; }
-        .btn-delete { color: var(--accent); background: none; border: none; padding: 5px; font-weight: bold; }
+        .info-small { color: var(--text-dim); font-size: 0.8rem; display: block; }
 
-        /* ÜBUNGS DETAIL SEITE */
-        .set-card { background: var(--card-bg); border-radius: 12px; padding: 15px; margin-bottom: 12px; border-left: 4px solid var(--secondary); }
+        /* SATZ-LOGIK */
+        .set-card { background: var(--card); border-radius: 12px; padding: 15px; margin-bottom: 10px; border-left: 4px solid var(--secondary); }
         .set-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
-        .weight-preview { font-size: 0.85rem; color: var(--primary); }
-        .history-expanded { margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border); display: none; }
-        .history-expanded.show { display: block; }
-        .history-list { font-size: 0.8rem; color: var(--text-dim); margin-bottom: 10px; }
+        .history-box { display: none; margin-top: 15px; padding-top: 10px; border-top: 1px solid var(--border); }
+        .history-box.show { display: block; }
 
         /* INPUTS */
-        .input-group { display: flex; gap: 10px; margin-top: 10px; }
+        .input-row { display: flex; gap: 10px; margin-top: 10px; }
         input { 
             flex: 1; background: #0f172a; border: 1px solid var(--border); color: white; 
             padding: 12px; border-radius: 8px; text-align: center; font-size: 1rem;
         }
-        input:focus { outline: none; border-color: var(--primary); }
 
         /* BUTTONS */
-        .btn { 
-            width: 100%; padding: 16px; border-radius: 12px; border: none; font-weight: bold; font-size: 1rem; cursor: pointer;
-            margin-top: 10px; transition: 0.2s;
-        }
+        .btn { width: 100%; padding: 16px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; margin-top: 10px; }
         .btn-primary { background: var(--primary); color: #000; }
         .btn-ghost { background: transparent; border: 2px dashed var(--border); color: var(--text-dim); }
-        .btn-save { background: var(--text); color: var(--bg); position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: calc(100% - 30px); max-width: 470px; }
+        .btn-danger { color: var(--accent); background: none; border: none; font-size: 0.8rem; }
+        .btn-save-fixed { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: calc(100% - 30px); max-width: 470px; z-index: 100; }
     </style>
 </head>
 <body>
 
 <div class="app">
 
-    <!-- VIEW: HOME / KALENDER -->
+    <!-- HOME: KALENDER & ÜBERSICHT -->
     <div id="view-home" class="view active">
         <div class="header">
-            <h2 id="cal-month-title">Monat Jahr</h2>
+            <h2 id="month-label">Monat</h2>
             <div>
-                <button class="back-btn" onclick="changeMonth(-1)">◀</button>
-                <button class="back-btn" onclick="changeMonth(1)">▶</button>
+                <button class="back-btn" onclick="navMonth(-1)">◀</button>
+                <button class="back-btn" onclick="navMonth(1)">▶</button>
             </div>
         </div>
-        
-        <div class="calendar">
-            <div class="cal-grid" id="cal-labels">
-                <div class="cal-day-label">MO</div><div class="cal-day-label">DI</div><div class="cal-day-label">MI</div>
-                <div class="cal-day-label">DO</div><div class="cal-day-label">FR</div><div class="cal-day-label">SA</div><div class="cal-day-label">SO</div>
-            </div>
-            <div class="cal-grid" id="calendar-days"></div>
-        </div>
+        <div class="calendar" id="calendar-body"></div>
 
-        <h3>Meine Einheiten</h3>
-        <div id="workout-list"></div>
-        <button class="btn btn-ghost" onclick="createNewWorkout()">+ Neue Trainingseinheit</button>
+        <h3>Deine Pläne</h3>
+        <div id="plan-list"></div>
+        <button class="btn btn-ghost" onclick="createNewPlan()">+ Neuen Trainingsplan erstellen</button>
     </div>
 
-    <!-- VIEW: WORKOUT STRUKTUR (Nur Übungen) -->
+    <!-- PLANUNG: EINHEIT KONFIGURIEREN -->
+    <div id="view-config" class="view">
+        <div class="header">
+            <button class="back-btn" onclick="navigateTo('home')">← Abbrechen</button>
+            <h2 id="config-title">Plan bearbeiten</h2>
+        </div>
+        <div id="config-exercise-list"></div>
+        <button class="btn btn-ghost" onclick="addExerciseToConfig()">+ Übung hinzufügen</button>
+        <button class="btn btn-primary" onclick="savePlanConfig()">Plan speichern</button>
+    </div>
+
+    <!-- TRAINING: ÜBUNGSAUSWAHL -->
     <div id="view-workout" class="view">
         <div class="header">
-            <button class="back-btn" onclick="navigateTo('home')">← Zurück</button>
-            <h2 id="workout-title">Einheit</h2>
+            <button class="back-btn" onclick="navigateTo('home')">← Beenden</button>
+            <h2 id="workout-title">Training</h2>
         </div>
-        <p style="color: var(--text-dim); font-size: 0.9rem;">Wähle eine Übung zum Starten:</p>
-        <div id="exercise-list"></div>
-        <button class="btn btn-ghost" onclick="addExerciseToPlan()">+ Übung hinzufügen</button>
-        <button class="btn btn-save" onclick="finishFullWorkout()">Training abschließen</button>
+        <div id="workout-exercise-list"></div>
+        <button class="btn btn-primary btn-save-fixed" onclick="finishWorkout()">Training abschließen</button>
     </div>
 
-    <!-- VIEW: ÜBUNGS-DETAIL (Sätze & Historie) -->
+    <!-- ÜBUNGS-LOG: SÄTZE & HISTORIE -->
     <div id="view-exercise-detail" class="view">
         <div class="header">
             <button class="back-btn" onclick="navigateTo('workout')">← Übungen</button>
-            <h2 id="detail-exercise-name">Übung</h2>
+            <h2 id="detail-ex-name">Übung</h2>
         </div>
-        
         <div id="sets-container"></div>
-        
-        <button class="btn btn-ghost" onclick="addNewSet()">+ Weiteren Satz hinzufügen</button>
-        <button class="btn btn-primary" style="margin-top: 30px;" onclick="navigateTo('workout')">Sätze bestätigen</button>
-    </div>
-
-    <!-- VIEW: SUMMARY -->
-    <div id="view-summary" class="view">
-        <h2>Zusammenfassung</h2>
-        <div class="calendar" id="summary-data"></div>
-        <button class="btn btn-primary" onclick="saveToHistory()">In Historie speichern</button>
+        <button class="btn btn-primary" onclick="navigateTo('workout')">Fertig</button>
     </div>
 
 </div>
 
 <script>
-    // --- DATENSTRUKTUR MIT DUMMY DATEN ---
-    let appData = JSON.parse(localStorage.getItem('gym_pro_data')) || {
-        workouts: [
-            { id: 101, name: "Legs", exercises: ["Kniebeugen", "Beinbeuger", "Waden"] },
-            { id: 102, name: "Upper Body", exercises: ["Bankdrücken", "Rudern", "Schulterdrücken"] }
+    // --- DATEN ---
+    let appData = JSON.parse(localStorage.getItem('gym_v3_data')) || {
+        plans: [
+            { id: 1, name: "Push (Beispiel)", exercises: [{ name: "Bankdrücken", setsCount: 3 }, { name: "Schulterdrücken", setsCount: 3 }] }
         ],
-        history: [
-            // Dummy Daten für Historie der letzten 3 Male (Bankdrücken)
-            { date: "2024-04-20", workoutId: 102, exercises: [{ name: "Bankdrücken", sets: [{ weight: 60, reps: 10 }, { weight: 60, reps: 8 }] }] },
-            { date: "2024-04-27", workoutId: 102, exercises: [{ name: "Bankdrücken", sets: [{ weight: 62.5, reps: 10 }, { weight: 62.5, reps: 9 }] }] },
-            { date: "2024-05-01", workoutId: 102, exercises: [{ name: "Bankdrücken", sets: [{ weight: 65, reps: 8 }, { weight: 65, reps: 7 }] }] }
-        ]
+        history: []
     };
 
     let currentMonth = new Date();
-    let activeSession = { workoutId: null, exercises: [] };
+    let session = { planId: null, exercises: [] };
     let activeExIdx = null;
+    let tempPlan = null;
 
     // --- NAVIGATION ---
     function navigateTo(viewId) {
@@ -165,216 +145,181 @@
         if(viewId === 'home') renderHome();
     }
 
-    // --- KALENDER LOGIK ---
-    function renderCalendar() {
-        const grid = document.getElementById('calendar-days');
-        const title = document.getElementById('cal-month-title');
-        grid.innerHTML = '';
-        
-        const year = currentMonth.getFullYear();
-        const month = currentMonth.getMonth();
-        title.innerText = new Intl.DateTimeFormat('de-DE', { month: 'long', year: 'numeric' }).format(currentMonth);
-
-        const firstDay = new Date(year, month, 1).getDay();
-        const daysInMonth = new Date(year, month + 1, 0).getDate();
-        const offset = firstDay === 0 ? 6 : firstDay - 1;
-
-        for(let i=0; i<offset; i++) grid.appendChild(document.createElement('div'));
-
-        for(let d=1; d<=daysInMonth; d++) {
-            const dayDiv = document.createElement('div');
-            dayDiv.className = 'cal-day';
-            const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-            
-            if(appData.history.some(h => h.date === dateStr)) dayDiv.classList.add('has-workout');
-            if(new Date().toDateString() === new Date(year, month, d).toDateString()) dayDiv.classList.add('today');
-            
-            dayDiv.innerText = d;
-            grid.appendChild(dayDiv);
-        }
-    }
-
-    function changeMonth(dir) {
-        currentMonth.setMonth(currentMonth.getMonth() + dir);
-        renderCalendar();
-    }
-
-    // --- WORKOUT & ÜBUNGS LOGIK ---
+    // --- HOME & KALENDER ---
     function renderHome() {
         renderCalendar();
-        const list = document.getElementById('workout-list');
+        const list = document.getElementById('plan-list');
         list.innerHTML = '';
-        appData.workouts.forEach((w, idx) => {
-            const div = document.createElement('div');
-            div.className = 'list-item';
-            div.innerHTML = `<span>${w.name}</span><button class="btn-delete" onclick="deleteWorkout(${idx}, event)">Löschen</button>`;
-            div.onclick = () => startWorkoutSession(w);
-            list.appendChild(div);
-        });
-    }
-
-    function deleteWorkout(idx, e) {
-        e.stopPropagation();
-        if(confirm("Einheit löschen?")) {
-            appData.workouts.splice(idx, 1);
-            save(); renderHome();
-        }
-    }
-
-    function startWorkoutSession(workout) {
-        document.getElementById('workout-title').innerText = workout.name;
-        // Initialisiere Session-Daten falls leer
-        activeSession.workoutId = workout.id;
-        activeSession.name = workout.name;
-        activeSession.exercises = workout.exercises.map(exName => {
-            return { name: exName, sets: [{ weight: getLastWeight(exName), reps: "" }] };
-        });
-        renderExerciseList();
-        navigateTo('workout');
-    }
-
-    function renderExerciseList() {
-        const list = document.getElementById('exercise-list');
-        list.innerHTML = '';
-        activeSession.exercises.forEach((ex, idx) => {
+        appData.plans.forEach((plan, idx) => {
             const div = document.createElement('div');
             div.className = 'list-item';
             div.innerHTML = `
-                <div class="exercise-item">
-                    <strong>${ex.name}</strong>
-                    <small style="color:var(--text-dim)">${ex.sets.length} Sätze eingetragen</small>
+                <div onclick="startWorkout(${idx})">
+                    <strong>${plan.name}</strong>
+                    <span class="info-small">${plan.exercises.length} Übungen</span>
                 </div>
-                <button class="btn-delete" onclick="removeExFromSession(${idx}, event)">×</button>
+                <button class="back-btn" style="color:var(--text-dim)" onclick="editPlan(${idx})">⚙️</button>
             `;
-            div.onclick = () => openExerciseDetail(idx);
             list.appendChild(div);
         });
     }
 
-    function openExerciseDetail(idx) {
-        activeExIdx = idx;
-        const ex = activeSession.exercises[idx];
-        document.getElementById('detail-exercise-name').innerText = ex.name;
-        renderSets();
-        navigateTo('exercise-detail');
+    function renderCalendar() {
+        const body = document.getElementById('calendar-body');
+        body.innerHTML = '<div class="cal-grid">' + ['MO','DI','MI','DO','FR','SA','SO'].map(d => `<div style="font-size:0.7rem;color:var(--text-dim)">${d}</div>`).join('') + '</div>';
+        const grid = document.createElement('div');
+        grid.className = 'cal-grid';
+        
+        const year = currentMonth.getFullYear();
+        const month = currentMonth.getMonth();
+        document.getElementById('month-label').innerText = new Intl.DateTimeFormat('de-DE', {month:'long', year:'numeric'}).format(currentMonth);
+
+        const firstDay = (new Date(year, month, 1).getDay() + 6) % 7;
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+        for(let i=0; i<firstDay; i++) grid.appendChild(document.createElement('div'));
+        for(let d=1; d<=daysInMonth; d++) {
+            const day = document.createElement('div');
+            day.className = 'cal-day';
+            const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+            if(appData.history.some(h => h.date === dateStr)) day.classList.add('has-workout');
+            if(new Date().toDateString() === new Date(year,month,d).toDateString()) day.classList.add('today');
+            day.innerText = d;
+            grid.appendChild(day);
+        }
+        body.appendChild(grid);
     }
 
-    function renderSets() {
+    function navMonth(dir) { currentMonth.setMonth(currentMonth.getMonth() + dir); renderHome(); }
+
+    // --- KONFIGURATION (FIXE SÄTZE) ---
+    function editPlan(idx) {
+        tempPlan = JSON.parse(JSON.stringify(appData.plans[idx]));
+        renderConfig();
+        navigateTo('config');
+    }
+
+    function createNewPlan() {
+        tempPlan = { id: Date.now(), name: "Neuer Plan", exercises: [] };
+        renderConfig();
+        navigateTo('config');
+    }
+
+    function renderConfig() {
+        const list = document.getElementById('config-exercise-list');
+        list.innerHTML = `<input type="text" value="${tempPlan.name}" oninput="tempPlan.name=this.value" style="margin-bottom:20px; font-weight:bold;">`;
+        tempPlan.exercises.forEach((ex, idx) => {
+            const div = document.createElement('div');
+            div.className = 'list-item';
+            div.style.flexDirection = 'column';
+            div.style.alignItems = 'stretch';
+            div.innerHTML = `
+                <div style="display:flex; gap:10px;">
+                    <input type="text" placeholder="Übungsname" value="${ex.name}" oninput="tempPlan.exercises[${idx}].name=this.value">
+                    <input type="number" placeholder="Sätze" value="${ex.setsCount}" oninput="tempPlan.exercises[${idx}].setsCount=this.value" style="max-width:70px;">
+                </div>
+                <button class="btn-danger" onclick="tempPlan.exercises.splice(${idx},1); renderConfig();">Übung entfernen</button>
+            `;
+            list.appendChild(div);
+        });
+    }
+
+    function addExerciseToConfig() {
+        tempPlan.exercises.push({ name: "", setsCount: 3 });
+        renderConfig();
+    }
+
+    function savePlanConfig() {
+        const idx = appData.plans.findIndex(p => p.id === tempPlan.id);
+        if(idx > -1) appData.plans[idx] = tempPlan;
+        else appData.plans.push(tempPlan);
+        save(); navigateTo('home');
+    }
+
+    // --- TRAINING ---
+    function startWorkout(planIdx) {
+        const plan = appData.plans[planIdx];
+        session = {
+            date: new Date().toISOString().split('T')[0],
+            name: plan.name,
+            exercises: plan.exercises.map(ex => ({
+                name: ex.name,
+                sets: Array.from({length: ex.setsCount}, () => ({ weight: getLastWeight(ex.name), reps: "" }))
+            }))
+        };
+        renderWorkoutList();
+        navigateTo('workout');
+    }
+
+    function renderWorkoutList() {
+        const list = document.getElementById('workout-exercise-list');
+        list.innerHTML = '';
+        document.getElementById('workout-title').innerText = session.name;
+        session.exercises.forEach((ex, idx) => {
+            const div = document.createElement('div');
+            div.className = 'list-item';
+            div.innerHTML = `<div><strong>${ex.name}</strong><span class="info-small">${ex.sets.length} Sätze geplant</span></div><span>▶</span>`;
+            div.onclick = () => openExerciseLog(idx);
+            list.appendChild(div);
+        });
+    }
+
+    function openExerciseLog(idx) {
+        activeExIdx = idx;
+        const ex = session.exercises[idx];
+        document.getElementById('detail-ex-name').innerText = ex.name;
         const container = document.getElementById('sets-container');
         container.innerHTML = '';
-        const ex = activeSession.exercises[activeExIdx];
 
         ex.sets.forEach((set, sIdx) => {
-            const lastWeight = getLastWeight(ex.name);
-            const historyReps = getLastReps(ex.name, sIdx); // Holt die Reps der letzten 3 Einheiten
-
+            const history = getHistory(ex.name, sIdx);
             const card = document.createElement('div');
             card.className = 'set-card';
             card.innerHTML = `
-                <div class="set-header" onclick="toggleHistory(${sIdx})">
+                <div class="set-header" onclick="this.nextElementSibling.classList.toggle('show')">
                     <strong>Satz ${sIdx + 1}</strong>
-                    <span class="weight-preview">Letztes Mal: ${lastWeight || '--'} kg ▼</span>
+                    <span style="color:var(--primary); font-size:0.8rem;">Letztes Mal: ${set.weight || '--'}kg ▼</span>
                 </div>
-                <div id="history-${sIdx}" class="history-expanded">
-                    <div class="history-list">Historie (Reps): ${historyReps.length > 0 ? historyReps.join(' → ') : 'Keine Daten'}</div>
-                    <div class="input-group">
-                        <input type="number" placeholder="kg" value="${set.weight}" oninput="updateSetData(${sIdx}, 'weight', this.value)">
-                        <input type="number" placeholder="Reps" value="${set.reps}" oninput="updateSetData(${sIdx}, 'reps', this.value)">
+                <div class="history-box">
+                    <div class="info-small" style="margin-bottom:10px;">Historie (Reps): ${history.length ? history.join(' → ') : 'Keine Daten'}</div>
+                    <div class="input-row">
+                        <input type="number" placeholder="kg" value="${set.weight}" oninput="session.exercises[${activeExIdx}].sets[${sIdx}].weight=this.value">
+                        <input type="number" placeholder="Reps" value="${set.reps}" oninput="session.exercises[${activeExIdx}].sets[${sIdx}].reps=this.value">
                     </div>
                 </div>
             `;
             container.appendChild(card);
         });
+        navigateTo('exercise-detail');
     }
 
-    function toggleHistory(sIdx) {
-        const el = document.getElementById(`history-${sIdx}`);
-        el.classList.toggle('show');
-    }
-
-    // --- HELPER FUNKTIONEN FÜR DATEN ---
-    function getLastWeight(exName) {
-        for (let i = appData.history.length - 1; i >= 0; i--) {
-            const ex = appData.history[i].exercises.find(e => e.name === exName);
-            if (ex && ex.sets[0]) return ex.sets[0].weight;
+    // --- DATA HELPERS ---
+    function getLastWeight(name) {
+        for(let i=appData.history.length-1; i>=0; i--) {
+            const ex = appData.history[i].exercises.find(e => e.name === name);
+            if(ex && ex.sets[0]) return ex.sets[0].weight;
         }
         return "";
     }
 
-    function getLastReps(exName, setIdx) {
-        let historyReps = [];
-        let count = 0;
-        for (let i = appData.history.length - 1; i >= 0 && count < 3; i--) {
-            const ex = appData.history[i].exercises.find(e => e.name === exName);
-            if (ex && ex.sets[setIdx]) {
-                historyReps.push(ex.sets[setIdx].reps);
-                count++;
-            }
-        }
-        return historyReps;
+    function getHistory(name, setIdx) {
+        return appData.history.slice(-5).reverse().map(h => {
+            const ex = h.exercises.find(e => e.name === name);
+            return ex && ex.sets[setIdx] ? ex.sets[setIdx].reps : null;
+        }).filter(r => r !== null);
     }
 
-    function updateSetData(sIdx, field, val) {
-        activeSession.exercises[activeExIdx].sets[sIdx][field] = val;
-    }
-
-    function addNewSet() {
-        const ex = activeSession.exercises[activeExIdx];
-        const lastW = ex.sets[ex.sets.length-1].weight;
-        ex.sets.push({ weight: lastW, reps: "" });
-        renderSets();
-    }
-
-    function addExerciseToPlan() {
-        const name = prompt("Name der Übung:");
-        if(name) {
-            activeSession.exercises.push({ name: name, sets: [{ weight: getLastWeight(name), reps: "" }] });
-            renderExerciseList();
-        }
-    }
-
-    function removeExFromSession(idx, e) {
-        e.stopPropagation();
-        activeSession.exercises.splice(idx, 1);
-        renderExerciseList();
-    }
-
-    function finishFullWorkout() {
-        navigateTo('summary');
-        const sum = document.getElementById('summary-data');
-        let totalSets = 0;
-        activeSession.exercises.forEach(e => totalSets += e.sets.length);
-        sum.innerHTML = `
-            <p><strong>Einheit:</strong> ${activeSession.name}</p>
-            <p><strong>Übungen:</strong> ${activeSession.exercises.length}</p>
-            <p><strong>Sätze gesamt:</strong> ${totalSets}</p>
-        `;
-    }
-
-    function saveToHistory() {
-        const record = {
-            date: new Date().toISOString().split('T')[0],
-            workoutId: activeSession.workoutId,
-            exercises: JSON.parse(JSON.stringify(activeSession.exercises))
-        };
-        appData.history.push(record);
+    function finishWorkout() {
+        appData.history.push(JSON.parse(JSON.stringify(session)));
         save();
-        alert("Gespeichert!");
+        alert("Training gespeichert!");
         navigateTo('home');
     }
 
-    function save() { localStorage.setItem('gym_pro_data', JSON.stringify(appData)); }
+    function save() { localStorage.setItem('gym_v3_data', JSON.stringify(appData)); }
 
-    function createNewWorkout() {
-        const name = prompt("Name der Einheit (z.B. Pull):");
-        if(name) {
-            appData.workouts.push({ id: Date.now(), name: name, exercises: [] });
-            save(); renderHome();
-        }
-    }
-
-    // Start
     renderHome();
 </script>
+
 </body>
 </html>
